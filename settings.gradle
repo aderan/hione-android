@@ -1,0 +1,2 @@
+rootProject.name = "hione-android"
+include ':app'

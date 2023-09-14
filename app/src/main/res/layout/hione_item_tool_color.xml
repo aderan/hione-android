@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:tools="http://schemas.android.com/tools"
+  android:layout_width="32dp"
+  android:layout_height="32dp">
+
+  <ImageView
+    android:id="@+id/color_display"
+    android:layout_width="@dimen/hione_icon_size"
+    android:layout_height="@dimen/hione_icon_size"
+    android:layout_gravity="center"
+    android:contentDescription="@null"
+    tools:src="@drawable/fast_ic_tool_circle" />
+</FrameLayout>

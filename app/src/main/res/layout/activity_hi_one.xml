@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  xmlns:tools="http://schemas.android.com/tools">
+
+  <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#717078"
+    android:orientation="vertical">
+
+    <View
+      android:layout_width="0dp"
+      android:layout_height="120dp" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+      android:id="@+id/ratio_layout"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content">
+
+      <io.agora.board.fast.FastboardView
+        android:id="@+id/fastboard_view"
+        android:layout_width="match_parent"
+        android:background="@color/black"
+        android:layout_height="0dp"
+        app:layout_constraintDimensionRatio="w,3:4"
+        app:layout_constraintTop_toTopOf="parent" />
+
+      <io.agora.board.fast.sample.cases.hione.HiOneLayout
+        android:id="@+id/hi_one_layout"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <View
+      android:layout_width="0dp"
+      android:layout_height="0dp"
+      android:layout_weight="1"/>
+
+    <LinearLayout
+      android:id="@+id/files_layout"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:background="@color/white"
+      android:orientation="vertical"
+      android:visibility="gone">
+
+      <TextView
+        android:id="@+id/insert_pptx"
+        android:layout_width="match_parent"
+        android:gravity="center"
+        android:text="动态文档"
+        android:textColor="#CCCCCC"
+        android:layout_height="40dp" />
+
+      <TextView
+        android:id="@+id/insert_static"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:gravity="center"
+        android:text="静态文档"
+        android:textColor="#CCCCCC" />
+
+      <TextView
+        android:id="@+id/insert_image"
+        android:layout_width="match_parent"
+        android:gravity="center"
+        android:text="图片"
+        android:textColor="#CCCCCC"
+        android:layout_height="40dp" />
+
+      <TextView
+        android:id="@+id/close_all"
+        android:layout_width="match_parent"
+        android:gravity="center"
+        android:text="关闭所有文档"
+        android:textColor="#CCCCCC"
+        android:layout_height="40dp" />
+    </LinearLayout>
+  </LinearLayout>
+
+  <FrameLayout
+    android:id="@+id/text_input_layout"
+    tools:visibility="visible"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:visibility="invisible">
+
+    <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="48dp"
+      android:layout_gravity="bottom"
+      android:background="@color/white"
+      android:orientation="horizontal">
+
+      <EditText
+        android:id="@+id/text_input"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:layout_marginStart="12dp"
+        android:layout_marginVertical="8dp"
+        android:background="@drawable/hione_input_text_bg"
+        android:maxLines="1"
+        android:paddingHorizontal="15dp"
+        android:textSize="14sp"
+        tools:text="文本" />
+
+      <TextView
+        android:id="@+id/text_input_done"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:paddingHorizontal="12dp"
+        android:text="@string/done"
+        android:textColor="@color/hione_text_blue"
+        android:textSize="16sp" />
+    </LinearLayout>
+  </FrameLayout>
+</FrameLayout>
