@@ -33,6 +33,9 @@ class HiOneLayout @JvmOverloads constructor(
 
     private lateinit var gestureView: HiOneGestureView
     private lateinit var appliances: LinearLayout
+    private lateinit var paintLayout: View
+    private lateinit var paintView: HiOnePaintView
+
     private lateinit var editor: View
     private lateinit var cloudService: View
 
@@ -43,10 +46,15 @@ class HiOneLayout @JvmOverloads constructor(
     private var textCount = 0
     private var lastTextId = "";
 
+    private var lastPaint = FastAppliance.PENCIL
+
     private val items = mutableListOf(
         Item(FastAppliance.HAND, R.drawable.fast_ic_tool_hand_selector, "拖拽"),
         Item(FastAppliance.LASER_POINTER, R.drawable.fast_ic_tool_raser, "激光"),
-        Item(FastAppliance.PENCIL, R.drawable.fast_ic_tool_pencil_selector, "画笔"),
+        Item(null, R.drawable.fast_ic_tool_pencil_selector, "画笔", onClick = {
+            fastRoom?.setAppliance(lastPaint)
+            paintLayout.isVisible = true
+        }),
         Item(null, R.drawable.fast_ic_tool_text_selector, "文本", onClick = {
             fastRoom?.setAppliance(FastAppliance.SELECTOR)
 
@@ -110,6 +118,13 @@ class HiOneLayout @JvmOverloads constructor(
         cloudService.setOnClickListener {
             listener?.onCloudStorageClick()
         }
+
+        paintLayout = root.findViewById(R.id.paint_layout)
+        paintLayout.setOnClickListener {
+            paintLayout.isVisible = false
+        }
+
+        paintView = root.findViewById(R.id.paint_view)
     }
 
     private fun updateEditorMode(selected: Boolean) {
