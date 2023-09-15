@@ -7,7 +7,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import io.agora.board.fast.sample.cases.hione.HiOneActivity;
 import io.agora.board.fast.sample.misc.TestCase;
 import io.agora.board.fast.sample.misc.TestCase.RoomInfo;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 

@@ -33,10 +33,15 @@ open class HiOneActivity : AppCompatActivity() {
     private lateinit var fastboard: Fastboard
     private lateinit var fastRoom: FastRoom
 
+    // 主控制布局
     private lateinit var hiOneLayout: HiOneLayout
+
+    // 文本输入布局
     private lateinit var textInputLayout: View
     private lateinit var textInput: EditText
     private lateinit var textInputDone: View
+
+    // 云盘文件列表
     private lateinit var filesLayout: View
     private var keyboardHeightProvider: KeyboardHeightProvider? = null
 
@@ -62,51 +67,6 @@ open class HiOneActivity : AppCompatActivity() {
             }
         })
 
-        filesLayout = findViewById(R.id.files_layout)
-        findViewById<View>(R.id.insert_pptx).setOnClickListener {
-            val uuid = "dc01ee126edc4ce7be8da3f7361a2f70"
-            val prefix =
-                "https://conversion-demo-cn.oss-cn-hangzhou.aliyuncs.com/demo/dynamicConvert"
-            val title = "开始使用 Flat"
-            fastRoom.insertPptx(uuid, prefix, title, null)
-
-            filesLayout.isVisible = false
-        }
-
-        findViewById<View>(R.id.insert_static).setOnClickListener {
-            val pages = Utils.getDocPages("8da4cdc71a9845d385a5b58ddfa10b7e")
-            val title = "开始使用 Flat"
-            fastRoom.insertStaticDoc(pages, title, null)
-
-            filesLayout.isVisible = false
-        }
-
-        findViewById<View>(R.id.insert_image).setOnClickListener {
-            val imageUrl =
-                "https://flat-storage.oss-accelerate.aliyuncs.com/cloud-storage/2022-02/15/ebe8320a-a90e-4e03-ad3a-a5dc06ae6eda/ebe8320a-a90e-4e03-ad3a-a5dc06ae6eda.png"
-            val width = 512.0
-            val height = 512.0
-
-            val pages = listOf(DocPage(imageUrl, width, height)).toTypedArray()
-            fastRoom.insertStaticDoc(pages, "单图片", null)
-
-            filesLayout.isVisible = false
-        }
-
-        findViewById<View>(R.id.close_all).setOnClickListener {
-            fastRoom.room.queryAllApps(object : Promise<Map<String, WindowAppSyncAttrs>> {
-                override fun then(apps: Map<String, WindowAppSyncAttrs>) {
-                    apps.keys.forEach { appId ->
-                        fastRoom.room.closeApp(appId, null)
-                    }
-                }
-
-                override fun catchEx(t: SDKError?) {
-
-                }
-            })
-        }
-
         textInputLayout = findViewById(R.id.text_input_layout)
         textInput = findViewById(R.id.text_input)
         textInputDone = findViewById(R.id.text_input_done)
@@ -123,6 +83,8 @@ open class HiOneActivity : AppCompatActivity() {
         textInputDone.setOnClickListener {
             exitTextInput()
         }
+
+        initCloudLayout()
 
         keyboardHeightProvider = KeyboardHeightProvider(this)
             .setHeightListener(object : KeyboardHeightProvider.HeightListener {
@@ -141,7 +103,6 @@ open class HiOneActivity : AppCompatActivity() {
                     }
                 }
             })
-
     }
 
     private fun enterTextInput() {
@@ -158,6 +119,8 @@ open class HiOneActivity : AppCompatActivity() {
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         if (hasFocus) {
             keyboardHeightProvider?.start()
+        } else {
+            keyboardHeightProvider?.stop()
         }
     }
 
@@ -213,4 +176,52 @@ open class HiOneActivity : AppCompatActivity() {
     private fun getUserId(): String? {
         return Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
     }
+
+    private fun initCloudLayout() {
+        filesLayout = findViewById(R.id.files_layout)
+        findViewById<View>(R.id.insert_pptx).setOnClickListener {
+            val uuid = "dc01ee126edc4ce7be8da3f7361a2f70"
+            val prefix =
+                "https://conversion-demo-cn.oss-cn-hangzhou.aliyuncs.com/demo/dynamicConvert"
+            val title = "开始使用 Flat"
+            fastRoom.insertPptx(uuid, prefix, title, null)
+
+            filesLayout.isVisible = false
+        }
+
+        findViewById<View>(R.id.insert_static).setOnClickListener {
+            val pages = Utils.getDocPages("8da4cdc71a9845d385a5b58ddfa10b7e")
+            val title = "开始使用 Flat"
+            fastRoom.insertStaticDoc(pages, title, null)
+
+            filesLayout.isVisible = false
+        }
+
+        findViewById<View>(R.id.insert_image).setOnClickListener {
+            val imageUrl =
+                "https://flat-storage.oss-accelerate.aliyuncs.com/cloud-storage/2022-02/15/ebe8320a-a90e-4e03-ad3a-a5dc06ae6eda/ebe8320a-a90e-4e03-ad3a-a5dc06ae6eda.png"
+            val width = 512.0
+            val height = 512.0
+
+            val pages = listOf(DocPage(imageUrl, width, height)).toTypedArray()
+            fastRoom.insertStaticDoc(pages, "单图片", null)
+
+            filesLayout.isVisible = false
+        }
+
+        findViewById<View>(R.id.close_all).setOnClickListener {
+            fastRoom.room.queryAllApps(object : Promise<Map<String, WindowAppSyncAttrs>> {
+                override fun then(apps: Map<String, WindowAppSyncAttrs>) {
+                    apps.keys.forEach { appId ->
+                        fastRoom.room.closeApp(appId, null)
+                    }
+                }
+
+                override fun catchEx(t: SDKError?) {
+
+                }
+            })
+        }
+    }
+
 }

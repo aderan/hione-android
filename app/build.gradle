@@ -30,7 +30,7 @@ android {
 
 dependencies {
     implementation("com.github.netless-io:fastboard-android:1.4.1")
-    implementation("com.github.netless-io:whiteboard-android:bc8d74dce1") {
+    implementation("com.github.netless-io:whiteboard-android:2.16.67") {
         force true
     }
 

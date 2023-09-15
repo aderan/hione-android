@@ -3,7 +3,6 @@ package io.agora.board.fast.sample.cases.hione
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
 import io.agora.board.fast.sample.R
 

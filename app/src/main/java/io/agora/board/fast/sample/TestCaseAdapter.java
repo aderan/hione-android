@@ -4,13 +4,10 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-
-import java.util.List;
-
 import io.agora.board.fast.sample.misc.TestCase;
+import java.util.List;
 
 public class TestCaseAdapter extends RecyclerView.Adapter<TestCaseAdapter.ViewHolder> {
     private final List<TestCase> testcases;

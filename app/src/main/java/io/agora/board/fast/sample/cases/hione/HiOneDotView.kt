@@ -6,9 +6,10 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.util.AttributeSet
 import android.view.View
-import androidx.core.content.ContextCompat
-import io.agora.board.fast.sample.R
 
+/**
+ * 用于展示粗细选择的圆点
+ */
 class HiOneDotView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,

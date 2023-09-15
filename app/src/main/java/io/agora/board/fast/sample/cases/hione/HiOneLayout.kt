@@ -11,8 +11,8 @@ import android.widget.TextView
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.core.view.forEach
-import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
+import com.herewhite.sdk.WhiteboardView
 import com.herewhite.sdk.domain.Appliance
 import com.herewhite.sdk.domain.MemberState
 import com.herewhite.sdk.domain.Promise
@@ -23,7 +23,11 @@ import io.agora.board.fast.FastRoom
 import io.agora.board.fast.FastRoomListener
 import io.agora.board.fast.model.FastAppliance
 import io.agora.board.fast.sample.R
+import io.agora.board.fast.sample.cases.hione.HiOneLayout.Item.Companion.HAND_INDEX
+import io.agora.board.fast.sample.cases.hione.HiOneLayout.Item.Companion.LASER_INDEX
+import io.agora.board.fast.sample.cases.hione.HiOneLayout.Item.Companion.PENCIL_INDEX
 import io.agora.board.fast.sample.misc.toColorArray
+import org.json.JSONObject
 
 class HiOneLayout @JvmOverloads constructor(
     context: Context,
@@ -68,6 +72,18 @@ class HiOneLayout @JvmOverloads constructor(
 
     private var lastPaint = FastAppliance.PENCIL
 
+    data class Item(
+        @DrawableRes val icon: Int,
+        @StringRes val text: Int,
+        val onClick: () -> Unit = {}
+    ) {
+        companion object {
+            const val HAND_INDEX = 0
+            const val LASER_INDEX = 1
+            const val PENCIL_INDEX = 2
+        }
+    }
+
     private val items = mutableListOf(
         Item(R.drawable.fast_ic_tool_hand_selector, R.string.tool_drag, onClick = {
             fastRoom?.setAppliance(FastAppliance.HAND)
@@ -82,18 +98,7 @@ class HiOneLayout @JvmOverloads constructor(
         Item(R.drawable.fast_ic_tool_text_selector, R.string.tool_text, onClick = {
             fastRoom?.setAppliance(FastAppliance.SELECTOR)
 
-            val defaultText = context.getString(R.string.tool_text)
-            val offset = defaultTextOffset * (textCount++ % 5)
-            fastRoom?.room?.insertText(offset, offset, defaultText, object : Promise<String> {
-                override fun then(id: String) {
-                    lastTextId = id;
-                    listener?.onTextInsert(defaultText)
-                }
-
-                override fun catchEx(t: SDKError) {
-
-                }
-            })
+            getCameraState { x, y -> insertText(x.toInt(), y.toInt()) }
         }),
         Item(R.drawable.fast_ic_tool_undo, R.string.tool_undo, onClick = { fastRoom?.undo() }),
         Item(R.drawable.fast_ic_tool_redo, R.string.tool_redo, onClick = { fastRoom?.redo() }),
@@ -102,6 +107,38 @@ class HiOneLayout @JvmOverloads constructor(
             R.string.tool_clear,
             onClick = { fastRoom?.cleanScene() }),
     )
+
+    private fun getCameraState(callback: (x: Double, y: Double) -> Unit) {
+        val jsCode = "(function(a){return a ? a.camera : {}})(window.manager.focusedView);"
+        fastRoom?.fastboardView?.run {
+            val whiteboardView = findViewById<WhiteboardView>(R.id.fast_whiteboard_view)
+            whiteboardView?.evaluateJavascript(jsCode) {
+                val cameraObj = JSONObject(it)
+                val centerX = cameraObj.optDouble("centerX", 0.0)
+                val centerY = cameraObj.optDouble("centerY", 0.0)
+                callback(centerX, centerY)
+            };
+        }
+    }
+
+    private fun insertText(centerX: Int, centerY: Int) {
+        val defaultText = context.getString(R.string.tool_text)
+        val offset = defaultTextOffset * (textCount++ % 5)
+        fastRoom?.room?.insertText(
+            centerX + offset,
+            centerY + offset,
+            defaultText,
+            object : Promise<String> {
+                override fun then(id: String) {
+                    lastTextId = id
+                    listener?.onTextInsert(context.getString(R.string.tool_text))
+                }
+
+                override fun catchEx(t: SDKError) {
+
+                }
+            })
+    }
 
     init {
         initView(View.inflate(context, R.layout.layout_hi_one, this))
@@ -133,6 +170,7 @@ class HiOneLayout @JvmOverloads constructor(
         editor = root.findViewById(R.id.editor)
         editor.setOnClickListener {
             updateEditorMode(!editor.isSelected)
+            hidePaintView()
         }
         updateEditorMode(true)
 
@@ -216,7 +254,9 @@ class HiOneLayout @JvmOverloads constructor(
 
     fun attachRoom(fastRoom: FastRoom) {
         fastRoom.addListener(roomListener)
+
         updateMemberState(fastRoom.room.memberState)
+
         // 设置默认参数
         fastRoom.room.memberState = MemberState().apply {
             textColor = defaultTextColor
@@ -238,9 +278,9 @@ class HiOneLayout @JvmOverloads constructor(
 
         appliances.forEach { it.isSelected = false }
         when (memberState.currentApplianceName) {
-            Appliance.HAND -> appliances.getChildAt(0).isSelected = true
-            Appliance.LASER_POINTER -> appliances.getChildAt(1).isSelected = true
-            in HiOnePaintView.tools -> appliances.getChildAt(2).isSelected = true
+            Appliance.HAND -> appliances.getChildAt(HAND_INDEX).isSelected = true
+            Appliance.LASER_POINTER -> appliances.getChildAt(LASER_INDEX).isSelected = true
+            in HiOnePaintView.tools -> appliances.getChildAt(PENCIL_INDEX).isSelected = true
         }
     }
 
@@ -248,12 +288,6 @@ class HiOneLayout @JvmOverloads constructor(
         super.onDetachedFromWindow()
         fastRoom?.removeListener(roomListener)
     }
-
-    data class Item(
-        @DrawableRes val icon: Int,
-        @StringRes val text: Int,
-        val onClick: () -> Unit = {}
-    )
 
     interface HiOneLayoutListener {
         fun onCloudStorageClick()
