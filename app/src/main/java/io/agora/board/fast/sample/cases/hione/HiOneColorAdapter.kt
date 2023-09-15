@@ -8,7 +8,7 @@ import androidx.recyclerview.widget.RecyclerView
 import io.agora.board.fast.sample.R
 
 class HiOneColorAdapter(
-    private val colors: ArrayList<Int>
+    private val colors: IntArray
 ) : RecyclerView.Adapter<HiOneColorAdapter.ViewHolder>() {
 
     var curColor: Int = 0
@@ -29,9 +29,12 @@ class HiOneColorAdapter(
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
-        private val colorDisplay = itemView.findViewById<ImageView>(R.id.color_display)
+        private val colorDisplay = itemView.findViewById<HiOneColorView>(R.id.color_display)
 
         fun bind(color: Int) {
+            colorDisplay.setColor(color)
+
+            itemView.isSelected = curColor == color
             itemView.setOnClickListener {
                 onColorClickListener?.invoke(color)
             }

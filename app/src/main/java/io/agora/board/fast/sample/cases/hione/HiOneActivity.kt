@@ -117,7 +117,7 @@ open class HiOneActivity : AppCompatActivity() {
 
         textInput.addTextChangedListener(
             onTextChanged = { text, _, _, _ ->
-                hiOneLayout.updateText(if (text.isNullOrEmpty()) " " else text.toString(), false)
+                hiOneLayout.updateText(if (text.isNullOrEmpty()) " " else text.toString())
             }
         )
         textInputDone.setOnClickListener {
@@ -129,7 +129,8 @@ open class HiOneActivity : AppCompatActivity() {
                 private var originBottomMargin: Int? = null
                 override fun onHeightChanged(height: Int) {
                     if (originBottomMargin == null && textInputLayout.isVisible) {
-                        originBottomMargin = (textInputLayout.layoutParams as FrameLayout.LayoutParams).bottomMargin
+                        originBottomMargin =
+                            (textInputLayout.layoutParams as FrameLayout.LayoutParams).bottomMargin
                     }
                     if (originBottomMargin != null) {
                         val lp = textInputLayout.layoutParams as FrameLayout.LayoutParams

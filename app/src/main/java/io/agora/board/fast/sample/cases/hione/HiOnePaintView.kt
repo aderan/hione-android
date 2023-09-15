@@ -18,32 +18,37 @@ class HiOnePaintView @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : FrameLayout(context, attrs, defStyleAttr) {
 
+    companion object {
+        val strokeWidths = doubleArrayOf(4.0, 8.0, 12.0, 16.0)
+
+        val colors = intArrayOf(
+            Color.parseColor("#EC3455"),
+            Color.parseColor("#F5AD46"),
+            Color.parseColor("#68AB5D"),
+            Color.parseColor("#32C5FF"),
+            Color.parseColor("#005BF6"),
+            Color.parseColor("#6236FF"),
+            Color.parseColor("#9E51B6"),
+            Color.parseColor("#18FFE2"),
+
+            Color.parseColor("#FFFFFF"),
+            Color.parseColor("#65B1B2"),
+            Color.parseColor("#333333"),
+            Color.parseColor("#000000")
+        )
+
+        val tools = arrayOf(
+            Appliance.PENCIL,
+            Appliance.STRAIGHT,
+            Appliance.RECTANGLE,
+            Appliance.ELLIPSE
+        )
+    }
+
+    private lateinit var toolsLayout: ViewGroup
     private lateinit var strokeLevelLayout: ViewGroup
     private lateinit var colorRecyclerView: RecyclerView
-    private lateinit var toolPencil: View
-    private lateinit var toolStraight: View
-    private lateinit var toolRectangle: View
-    private lateinit var toolCircle: View
-
-    private var colorAdapter = HiOneColorAdapter(
-        object : ArrayList<Int>() {
-            init {
-                add(Color.parseColor("#EC3455"))
-                add(Color.parseColor("#F5AD46"))
-                add(Color.parseColor("#68AB5D"))
-                add(Color.parseColor("#32C5FF"))
-                add(Color.parseColor("#005BF6"))
-                add(Color.parseColor("#6236FF"))
-                add(Color.parseColor("#9E51B6"))
-                add(Color.parseColor("#6D7278"))
-
-                add(Color.parseColor("#6D7278"))
-                add(Color.parseColor("#6D7278"))
-                add(Color.parseColor("#6D7278"))
-                add(Color.parseColor("#6D7278"))
-            }
-        }
-    )
+    private var colorAdapter = HiOneColorAdapter(colors)
 
     private var listener: PaintViewListener? = null
 
@@ -53,19 +58,30 @@ class HiOnePaintView @JvmOverloads constructor(
 
     private fun initView(root: View) {
         strokeLevelLayout = findViewById(R.id.stroke_level_layout)
+        for (i in 0 until strokeLevelLayout.childCount) {
+            strokeLevelLayout.getChildAt(i).setOnClickListener {
+                listener?.onStrokeClick(strokeWidths[i])
+            }
+        }
 
         colorRecyclerView = findViewById(R.id.color_recycler_view)
         colorRecyclerView.adapter = colorAdapter
         colorRecyclerView.layoutManager = GridLayoutManager(context, 4)
 
         colorAdapter.onColorClickListener = {
-
+            listener?.onColorClick(it)
         }
 
-        toolPencil = findViewById(R.id.tool_pencil)
-        toolStraight = findViewById(R.id.tool_straight)
-        toolRectangle = findViewById(R.id.tool_rectangle)
-        toolCircle = findViewById(R.id.tool_circle)
+        toolsLayout = findViewById(R.id.tools_layout)
+        for (i in 0 until toolsLayout.childCount) {
+            toolsLayout.getChildAt(i).setOnClickListener {
+                listener?.onApplianceClick(tools[i])
+            }
+        }
+
+        this.setOnClickListener {
+            // 消费点击事件
+        }
     }
 
     fun updateMemberState(memberState: MemberState) {
@@ -75,44 +91,28 @@ class HiOnePaintView @JvmOverloads constructor(
     }
 
     private fun setColor(strokeColor: IntArray) {
-        val color = Color.rgb(strokeColor[0], strokeColor[1], strokeColor[2])
+        val color = Color.rgb(strokeColor[0], strokeColor[1], strokeColor[2]).toInt()
         colorAdapter.setColor(color)
     }
 
     private fun setAppliance(appliance: String) {
-        toolPencil.isSelected = false
-        toolStraight.isSelected = false
-        toolRectangle.isSelected = false
-        toolCircle.isSelected = false
-
-        when (appliance) {
-            Appliance.PENCIL -> toolPencil.isSelected = true
-            Appliance.STRAIGHT -> toolStraight.isSelected = true
-            Appliance.RECTANGLE -> toolRectangle.isSelected = true
-            Appliance.ELLIPSE -> toolCircle.isSelected = true
+        for (i in 0 until toolsLayout.childCount) {
+            toolsLayout.getChildAt(i).isSelected = tools[i] == appliance
         }
     }
 
     private fun setStroke(width: Double) {
-        val index = when (width) {
-            4.0 -> 1
-            8.0 -> 2
-            12.0 -> 3
-            16.0 -> 4
-            else -> -1
-        }
         for (i in 0 until strokeLevelLayout.childCount) {
-            strokeLevelLayout.getChildAt(i).isSelected = false
+            strokeLevelLayout.getChildAt(i).isSelected = strokeWidths[i] == width
         }
-        strokeLevelLayout.getChildAt(index)?.isSelected = true
     }
 
     interface PaintViewListener {
-        fun onStrokeLevelClick(level: Int)
+        fun onStrokeClick(width: Double)
 
         fun onColorClick(color: Int)
 
-        fun onToolClick(tool: Int)
+        fun onApplianceClick(appliance: String)
     }
 
     fun setPaintViewListener(listener: PaintViewListener) {

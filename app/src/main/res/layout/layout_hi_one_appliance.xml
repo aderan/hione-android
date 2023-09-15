@@ -11,8 +11,8 @@
 
   <ImageView
     android:id="@+id/icon"
-    android:layout_width="32dp"
-    android:layout_height="32dp"
+    android:layout_width="24dp"
+    android:layout_height="24dp"
     android:background="@drawable/hione_bg_appliance_item"
     app:tint="@color/white"
     tools:src="@drawable/fast_ic_tool_clicker_selector" />

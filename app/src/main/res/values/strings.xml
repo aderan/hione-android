@@ -2,4 +2,11 @@
   <string name="app_name" translatable="false">HiOne</string>
 
   <string name="done">完成</string>
+  <string name="tool_drag">拖拽</string>
+  <string name="tool_laser">激光</string>
+  <string name="tool_paint">画笔</string>
+  <string name="tool_text">文本</string>
+  <string name="tool_undo">撤销</string>
+  <string name="tool_redo">重做</string>
+  <string name="tool_clear">清除</string>
 </resources>
