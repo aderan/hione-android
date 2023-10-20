@@ -17,6 +17,7 @@ import io.agora.board.fast.FastRoom
 import io.agora.board.fast.Fastboard
 import io.agora.board.fast.FastboardView
 import io.agora.board.fast.extension.FastResource
+import io.agora.board.fast.internal.FastConvertor
 import io.agora.board.fast.model.ControllerId
 import io.agora.board.fast.model.DocPage
 import io.agora.board.fast.model.FastRegion
@@ -27,6 +28,7 @@ import io.agora.board.fast.sample.misc.KeyboardHeightProvider
 import io.agora.board.fast.sample.misc.Utils
 import io.agora.board.fast.sample.misc.hideSoftInput
 import io.agora.board.fast.sample.misc.showSoftInput
+import io.agora.board.fast.sample.cases.MultiWhiteBoardHelper
 
 open class HiOneActivity : AppCompatActivity() {
     private lateinit var fastboardView: FastboardView
@@ -44,6 +46,8 @@ open class HiOneActivity : AppCompatActivity() {
     // 云盘文件列表
     private lateinit var filesLayout: View
     private var keyboardHeightProvider: KeyboardHeightProvider? = null
+
+    private var multiWhiteBoardHelper: MultiWhiteBoardHelper? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -128,6 +132,7 @@ open class HiOneActivity : AppCompatActivity() {
         fastboardView = findViewById(R.id.fastboard_view)
         fastboard = fastboardView.fastboard
 
+
         val roomOptions = FastRoomOptions(
             Constants.SAMPLE_APP_ID,
             Constants.SAMPLE_ROOM_UUID,
@@ -145,6 +150,7 @@ open class HiOneActivity : AppCompatActivity() {
         roomOptions.roomParams = roomParams
 
         fastRoom = fastboard.createFastRoom(roomOptions)
+        multiWhiteBoardHelper = MultiWhiteBoardHelper(fastRoom)
 
         //set whiteboard and FastboardView background
         fastRoom.setResource(object : FastResource() {
@@ -191,9 +197,12 @@ open class HiOneActivity : AppCompatActivity() {
 
         findViewById<View>(R.id.insert_static).setOnClickListener {
             val pages = Utils.getDocPages("8da4cdc71a9845d385a5b58ddfa10b7e")
-            val title = "开始使用 Flat"
-            fastRoom.insertStaticDoc(pages, title, null)
+            val title = "FlatStart"
+            // fastRoom.insertStaticDoc(pages, title, null)
 
+            val scenes = FastConvertor.convertScenes(pages)
+            multiWhiteBoardHelper?.addWhiteBoard(title, scenes, Int.MAX_VALUE)
+            multiWhiteBoardHelper?.switchWhiteBoard(title, 0)
             filesLayout.isVisible = false
         }
 
