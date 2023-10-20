@@ -8,14 +8,14 @@ import com.herewhite.sdk.domain.Promise;
 import com.herewhite.sdk.domain.SDKError;
 import com.herewhite.sdk.domain.Scene;
 
+import io.agora.board.fast.FastRoom;
+import io.agora.board.fast.sample.R;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-import io.agora.board.fast.FastRoom;
-import io.agora.board.fast.sample.R;
 
 /**
  * 白板多窗口辅助类
@@ -33,11 +33,19 @@ public class MultiWhiteBoardHelper {
         this.fastRoom = fastRoom;
     }
 
+    /**
+     * 设置白板列表，可用于切换
+     * @param list 白板列表
+     */
     public void setWhiteBoardList(List<BoardListItem> list){
         boardList.clear();
         boardList.addAll(list);
     }
 
+    /**
+     * 获取白板列表，可用于数据同步
+     * @return 白板列表
+     */
     public List<BoardListItem> getWhiteBoardList() {
         ArrayList<BoardListItem> ret = new ArrayList<>();
         synchronized (boardList) {
@@ -57,7 +65,12 @@ public class MultiWhiteBoardHelper {
     }
 
 
-    public void addWhiteBoard(String path, Scene[] scenes, int index) {
+    /**
+     * 添加白板，用于插入空白白板、图片、ppt
+     * @param path 白板路径，需要是唯一且不带"/","|"特殊符号，如果是图片或者ppt，请带类型后缀，如.png，否则白板列表将无法识别类型
+     * @param scenes 白板上显示的场景列表
+     */
+    public void addWhiteBoard(String path, Scene[] scenes) {
         synchronized (boardList) {
             for (BoardListItem item : boardList) {
                 if (item.id.equals(path)) {
@@ -85,10 +98,15 @@ public class MultiWhiteBoardHelper {
         fastRoom.getRoom().putScenes(
                 "/",
                 newScenes,
-                index
+                Integer.MAX_VALUE
         );
     }
 
+    /**
+     * 切换白板，白板路径或者页数不存在时会切换失败
+     * @param path 白板路径
+     * @param page 白板页数
+     */
     public void switchWhiteBoard(String path, int page) {
         fastRoom.getRoom().getEntireScenes(new Promise<Map<String, Scene[]>>() {
             @Override
@@ -110,7 +128,7 @@ public class MultiWhiteBoardHelper {
                     }
                 }
                 sceneIndex += pathIndex;
-                if (sceneIndex < 0) {
+                if (sceneIndex < 0 || sceneIndex >= scenes.length) {
                     Log.e(TAG, "switchWhiteBoard then >> Can not find the scene index. path=" + path + ", page=" + page);
                     return;
                 }
@@ -124,7 +142,6 @@ public class MultiWhiteBoardHelper {
                     }
                 }
 
-//                fastRoom.getRoom().moveScene("/", scenes[sceneIndex].getName());
                 String script = "window.manager.setMainViewSceneIndex(" + sceneIndex + ")";
                 Log.d(TAG, "switchWhiteBoard >> script=" + script);
                 WhiteboardView whiteboardView = fastRoom.getFastboardView().findViewById(R.id.fast_whiteboard_view);
@@ -138,6 +155,10 @@ public class MultiWhiteBoardHelper {
         });
     }
 
+    /**
+     * 关闭白板
+     * @param path 白板路径
+     */
     public void destroyWhiteBoard(String path) {
         fastRoom.getRoom().getEntireScenes(new Promise<Map<String, Scene[]>>() {
             @Override
@@ -199,11 +220,19 @@ public class MultiWhiteBoardHelper {
         return BoardItemType.whiteboard;
     }
 
+    /**
+     * 白板状态
+     */
     public enum BoardItemStatus {
+        // 选中状态
         active,
+        // 非选中状态
         inactive
     }
 
+    /**
+     * 白板类型
+     */
     public enum BoardItemType {
         whiteboard,
         ppt,
@@ -216,6 +245,9 @@ public class MultiWhiteBoardHelper {
         gif
     }
 
+    /**
+     * 白板信息
+     */
     public static class BoardListItem {
         // 唯一标识，当前使用的是path值
         public String id;

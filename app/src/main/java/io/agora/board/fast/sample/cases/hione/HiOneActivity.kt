@@ -6,12 +6,13 @@ import android.provider.Settings
 import android.view.View
 import android.widget.EditText
 import android.widget.FrameLayout
+import android.widget.ImageView
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.core.widget.addTextChangedListener
-import com.herewhite.sdk.domain.Promise
-import com.herewhite.sdk.domain.SDKError
-import com.herewhite.sdk.domain.WindowAppSyncAttrs
+import com.herewhite.sdk.domain.PptPage
+import com.herewhite.sdk.domain.Scene
 import com.herewhite.sdk.domain.WindowParams
 import io.agora.board.fast.FastRoom
 import io.agora.board.fast.Fastboard
@@ -19,16 +20,16 @@ import io.agora.board.fast.FastboardView
 import io.agora.board.fast.extension.FastResource
 import io.agora.board.fast.internal.FastConvertor
 import io.agora.board.fast.model.ControllerId
-import io.agora.board.fast.model.DocPage
 import io.agora.board.fast.model.FastRegion
 import io.agora.board.fast.model.FastRoomOptions
 import io.agora.board.fast.sample.Constants
 import io.agora.board.fast.sample.R
+import io.agora.board.fast.sample.cases.MultiWhiteBoardHelper
 import io.agora.board.fast.sample.misc.KeyboardHeightProvider
 import io.agora.board.fast.sample.misc.Utils
 import io.agora.board.fast.sample.misc.hideSoftInput
 import io.agora.board.fast.sample.misc.showSoftInput
-import io.agora.board.fast.sample.cases.MultiWhiteBoardHelper
+import kotlin.math.abs
 
 open class HiOneActivity : AppCompatActivity() {
     private lateinit var fastboardView: FastboardView
@@ -185,51 +186,87 @@ open class HiOneActivity : AppCompatActivity() {
 
     private fun initCloudLayout() {
         filesLayout = findViewById(R.id.files_layout)
-        findViewById<View>(R.id.insert_pptx).setOnClickListener {
-            val uuid = "dc01ee126edc4ce7be8da3f7361a2f70"
-            val prefix =
-                "https://conversion-demo-cn.oss-cn-hangzhou.aliyuncs.com/demo/dynamicConvert"
-            val title = "开始使用 Flat"
-            fastRoom.insertPptx(uuid, prefix, title, null)
 
-            filesLayout.isVisible = false
+        val stopShare: (name: String) -> Unit = { name ->
+            multiWhiteBoardHelper?.destroyWhiteBoard(name)
         }
-
-        findViewById<View>(R.id.insert_static).setOnClickListener {
-            val pages = Utils.getDocPages("8da4cdc71a9845d385a5b58ddfa10b7e")
-            val title = "FlatStart"
-            // fastRoom.insertStaticDoc(pages, title, null)
-
-            val scenes = FastConvertor.convertScenes(pages)
-            multiWhiteBoardHelper?.addWhiteBoard(title, scenes, Int.MAX_VALUE)
-            multiWhiteBoardHelper?.switchWhiteBoard(title, 0)
-            filesLayout.isVisible = false
+        val switchPage: (name: String, index: Int) -> Unit = { name, index ->
+            multiWhiteBoardHelper?.switchWhiteBoard(name, index)
         }
-
-        findViewById<View>(R.id.insert_image).setOnClickListener {
+        val startShareWhiteBoard: (name: String, index: Int) -> Unit = { name, index ->
+            multiWhiteBoardHelper?.addWhiteBoard(
+                name,
+                arrayOf(Scene("1"), Scene("2"), Scene("3"), Scene("4"), Scene("5"))
+            )
+            multiWhiteBoardHelper?.switchWhiteBoard(name, index)
+        }
+        val startShareImage: (name: String, index: Int) -> Unit = { name, index ->
             val imageUrl =
                 "https://flat-storage.oss-accelerate.aliyuncs.com/cloud-storage/2022-02/15/ebe8320a-a90e-4e03-ad3a-a5dc06ae6eda/ebe8320a-a90e-4e03-ad3a-a5dc06ae6eda.png"
             val width = 512.0
             val height = 512.0
-
-            val pages = listOf(DocPage(imageUrl, width, height)).toTypedArray()
-            fastRoom.insertStaticDoc(pages, "单图片", null)
-
-            filesLayout.isVisible = false
+            multiWhiteBoardHelper?.addWhiteBoard(name, arrayOf(Scene("1", PptPage(imageUrl, width, height))))
+            multiWhiteBoardHelper?.switchWhiteBoard(name, index)
         }
 
-        findViewById<View>(R.id.close_all).setOnClickListener {
-            fastRoom.room.queryAllApps(object : Promise<Map<String, WindowAppSyncAttrs>> {
-                override fun then(apps: Map<String, WindowAppSyncAttrs>) {
-                    apps.keys.forEach { appId ->
-                        fastRoom.room.closeApp(appId, null)
-                    }
-                }
+        val pptScenes = FastConvertor.convertScenes(Utils.getDocPages("8da4cdc71a9845d385a5b58ddfa10b7e"))
+        val startSharePpt: (name: String, index: Int) -> Unit = { name, index ->
+            multiWhiteBoardHelper?.addWhiteBoard(name, pptScenes)
+            multiWhiteBoardHelper?.switchWhiteBoard(name, index)
+        }
+        setupControllerItem(R.id.insert_whiteboard_1, "whiteboard_1", 5, startShare = startShareWhiteBoard, stopShare = stopShare, switchPage = switchPage)
+        setupControllerItem(R.id.insert_whiteboard_2, "whiteboard_2", 5, startShare = startShareWhiteBoard, stopShare = stopShare, switchPage = switchPage)
+        setupControllerItem(R.id.insert_whiteboard_3, "whiteboard_3", 5, startShare = startShareWhiteBoard, stopShare = stopShare, switchPage = switchPage)
+        setupControllerItem(R.id.insert_image, "Test.png", 0, startShare = startShareImage, stopShare = stopShare, switchPage = switchPage)
+        setupControllerItem(R.id.insert_ppt, "Test.ppt", pptScenes.size, startShare = startSharePpt, stopShare = stopShare, switchPage = switchPage)
+    }
 
-                override fun catchEx(t: SDKError?) {
+    private fun setupControllerItem(
+        id: Int,
+        name: String,
+        pageCount: Int,
+        startShare: (name: String, index: Int) -> Unit,
+        stopShare: (name: String) -> Unit,
+        switchPage: (name: String, index: Int) -> Unit
+    ) {
+        val controllerView = findViewById<View>(id)
+        val tvName = controllerView.findViewById<TextView>(R.id.tvName)
+        val tvPage = controllerView.findViewById<TextView>(R.id.tvPage)
+        val ivPre = controllerView.findViewById<ImageView>(R.id.ivPrev)
+        val ivNext = controllerView.findViewById<ImageView>(R.id.ivNext)
+        val tvShare = controllerView.findViewById<TextView>(R.id.tvShare)
+        var index = 0
 
-                }
-            })
+        tvPage.isVisible = pageCount > 0
+        ivPre.isVisible = pageCount > 0
+        ivNext.isVisible = pageCount > 0
+        tvName.text = name
+        tvPage.text = "${index + 1}/$pageCount"
+        tvShare.setText(R.string.share_start)
+        tvShare.setTextColor(resources.getColor(R.color.blue))
+        tvShare.setOnClickListener {
+            if (tvShare.text == getString(R.string.share_start)) {
+                startShare.invoke(name, index)
+                tvShare.setText(R.string.share_stop)
+                tvShare.setTextColor(resources.getColor(R.color.red))
+            } else {
+                stopShare.invoke(name)
+                tvShare.setText(R.string.share_start)
+                tvShare.setTextColor(resources.getColor(R.color.blue))
+            }
+        }
+        ivPre.setOnClickListener {
+            index = abs(--index + pageCount * 1000) % pageCount
+            tvPage.text = "${index + 1}/$pageCount"
+            switchPage.invoke(name, index)
+        }
+        ivNext.setOnClickListener {
+            index = ++index % pageCount
+            tvPage.text = "${index + 1}/$pageCount"
+            switchPage.invoke(name, index)
+        }
+        controllerView.setOnClickListener {
+            switchPage.invoke(name, index)
         }
     }
 

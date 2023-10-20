@@ -47,39 +47,29 @@
       android:layout_height="wrap_content"
       android:background="@color/white"
       android:orientation="vertical"
+      tools:visibility="visible"
       android:visibility="gone">
 
-      <TextView
-        android:id="@+id/insert_pptx"
-        android:layout_width="match_parent"
-        android:gravity="center"
-        android:text="动态文档"
-        android:textColor="#CCCCCC"
-        android:layout_height="40dp" />
+      <include
+        android:id="@+id/insert_whiteboard_1"
+        layout="@layout/item_whiteboard_controller"/>
 
-      <TextView
-        android:id="@+id/insert_static"
-        android:layout_width="match_parent"
-        android:layout_height="40dp"
-        android:gravity="center"
-        android:text="静态文档"
-        android:textColor="#CCCCCC" />
+      <include
+          android:id="@+id/insert_whiteboard_2"
+          layout="@layout/item_whiteboard_controller"/>
 
-      <TextView
-        android:id="@+id/insert_image"
-        android:layout_width="match_parent"
-        android:gravity="center"
-        android:text="图片"
-        android:textColor="#CCCCCC"
-        android:layout_height="40dp" />
+      <include
+          android:id="@+id/insert_whiteboard_3"
+          layout="@layout/item_whiteboard_controller"/>
 
-      <TextView
-        android:id="@+id/close_all"
-        android:layout_width="match_parent"
-        android:gravity="center"
-        android:text="关闭所有文档"
-        android:textColor="#CCCCCC"
-        android:layout_height="40dp" />
+      <include
+          android:id="@+id/insert_image"
+          layout="@layout/item_whiteboard_controller"/>
+
+      <include
+          android:id="@+id/insert_ppt"
+          layout="@layout/item_whiteboard_controller"/>
+
     </LinearLayout>
   </LinearLayout>
 

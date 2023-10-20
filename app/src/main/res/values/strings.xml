@@ -1,4 +1,4 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources>
   <string name="app_name" translatable="false">HiOne</string>
 
   <string name="done">完成</string>
@@ -9,4 +9,7 @@
   <string name="tool_undo">撤销</string>
   <string name="tool_redo">重做</string>
   <string name="tool_clear">清除</string>
+  <string name="share_start">分享</string>
+  <string name="share_stop">停止分享</string>
+
 </resources>
