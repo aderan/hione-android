@@ -187,12 +187,15 @@ open class HiOneActivity : AppCompatActivity() {
     private fun initCloudLayout() {
         filesLayout = findViewById(R.id.files_layout)
 
+        // 停止共享
         val stopShare: (name: String) -> Unit = { name ->
             multiWhiteBoardHelper?.destroyWhiteBoard(name)
         }
+        // 切页
         val switchPage: (name: String, index: Int) -> Unit = { name, index ->
             multiWhiteBoardHelper?.switchWhiteBoard(name, index)
         }
+        // 共享空白白板
         val startShareWhiteBoard: (name: String, index: Int) -> Unit = { name, index ->
             multiWhiteBoardHelper?.addWhiteBoard(
                 name,
@@ -200,6 +203,7 @@ open class HiOneActivity : AppCompatActivity() {
             )
             multiWhiteBoardHelper?.switchWhiteBoard(name, index)
         }
+        // 共享图片
         val startShareImage: (name: String, index: Int) -> Unit = { name, index ->
             val imageUrl =
                 "https://flat-storage.oss-accelerate.aliyuncs.com/cloud-storage/2022-02/15/ebe8320a-a90e-4e03-ad3a-a5dc06ae6eda/ebe8320a-a90e-4e03-ad3a-a5dc06ae6eda.png"
@@ -208,7 +212,7 @@ open class HiOneActivity : AppCompatActivity() {
             multiWhiteBoardHelper?.addWhiteBoard(name, arrayOf(Scene("1", PptPage(imageUrl, width, height))))
             multiWhiteBoardHelper?.switchWhiteBoard(name, index)
         }
-
+        // 共享PPT
         val pptScenes = FastConvertor.convertScenes(Utils.getDocPages("8da4cdc71a9845d385a5b58ddfa10b7e"))
         val startSharePpt: (name: String, index: Int) -> Unit = { name, index ->
             multiWhiteBoardHelper?.addWhiteBoard(name, pptScenes)

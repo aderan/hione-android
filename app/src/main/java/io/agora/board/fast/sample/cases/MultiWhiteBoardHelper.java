@@ -111,41 +111,8 @@ public class MultiWhiteBoardHelper {
         fastRoom.getRoom().getEntireScenes(new Promise<Map<String, Scene[]>>() {
             @Override
             public void then(Map<String, Scene[]> stringMap) {
-                int pathIndex = -1;
-                int sceneIndex = -1;
                 Scene[] scenes = stringMap.get("/");
-                if (scenes != null) {
-                    for (int i = 0; i < scenes.length; i++) {
-                        if (scenes[i].getName().split(DIVIDE_BOARD_REGEX)[0].equals(path)) {
-                            if (pathIndex < 0) {
-                                pathIndex = i;
-                            }
-                            sceneIndex++;
-                            if (sceneIndex == page) {
-                                break;
-                            }
-                        }
-                    }
-                }
-                sceneIndex += pathIndex;
-                if (sceneIndex < 0 || sceneIndex >= scenes.length) {
-                    Log.e(TAG, "switchWhiteBoard then >> Can not find the scene index. path=" + path + ", page=" + page);
-                    return;
-                }
-
-                for (BoardListItem item : boardList) {
-                    if (item.id.equals(path)) {
-                        item.activityPage = page;
-                        item.status = BoardItemStatus.active;
-                    } else {
-                        item.status = BoardItemStatus.inactive;
-                    }
-                }
-
-                String script = "window.manager.setMainViewSceneIndex(" + sceneIndex + ")";
-                Log.d(TAG, "switchWhiteBoard >> script=" + script);
-                WhiteboardView whiteboardView = fastRoom.getFastboardView().findViewById(R.id.fast_whiteboard_view);
-                whiteboardView.evaluateJavascript(script);
+                switchWhiteBoardInner(scenes, path, page);
             }
 
             @Override
@@ -197,12 +164,11 @@ public class MultiWhiteBoardHelper {
                     nextActivityPage = boardListItem.activityPage;
                 }
 
-                switchWhiteBoard(nextBoardPath, nextActivityPage);
+                switchWhiteBoardInner(scenes, nextBoardPath, nextActivityPage);
 
                 for (Scene scene : removeScenes) {
                     fastRoom.getRoom().removeScenes("/" + scene.getName());
                 }
-
             }
 
             @Override
@@ -210,6 +176,43 @@ public class MultiWhiteBoardHelper {
                 Log.e(TAG, "destroyWhiteBoard catchEx >> SDKError = " + t);
             }
         });
+    }
+
+    private void switchWhiteBoardInner(Scene[] scenes, String path, int page) {
+        int pathIndex = -1;
+        int sceneIndex = -1;
+        if (scenes != null) {
+            for (int i = 0; i < scenes.length; i++) {
+                if (scenes[i].getName().split(DIVIDE_BOARD_REGEX)[0].equals(path)) {
+                    if (pathIndex < 0) {
+                        pathIndex = i;
+                    }
+                    sceneIndex++;
+                    if (sceneIndex == page) {
+                        break;
+                    }
+                }
+            }
+        }
+        sceneIndex += pathIndex;
+        if (sceneIndex < 0 || sceneIndex >= scenes.length) {
+            Log.e(TAG, "switchWhiteBoard then >> Can not find the scene index. path=" + path + ", page=" + page);
+            return;
+        }
+
+        for (BoardListItem item : boardList) {
+            if (item.id.equals(path)) {
+                item.activityPage = page;
+                item.status = BoardItemStatus.active;
+            } else {
+                item.status = BoardItemStatus.inactive;
+            }
+        }
+
+        String script = "window.manager.setMainViewSceneIndex(" + sceneIndex + ")";
+        Log.d(TAG, "switchWhiteBoard >> script=" + script);
+        WhiteboardView whiteboardView = fastRoom.getFastboardView().findViewById(R.id.fast_whiteboard_view);
+        whiteboardView.evaluateJavascript(script);
     }
 
     private BoardItemType getBoardItemType(String name) {
