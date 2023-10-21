@@ -8,13 +8,17 @@ import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.core.widget.addTextChangedListener
+import com.herewhite.sdk.domain.GlobalState
 import com.herewhite.sdk.domain.PptPage
+import com.herewhite.sdk.domain.RoomState
 import com.herewhite.sdk.domain.Scene
 import com.herewhite.sdk.domain.WindowParams
 import io.agora.board.fast.FastRoom
+import io.agora.board.fast.FastRoomListener
 import io.agora.board.fast.Fastboard
 import io.agora.board.fast.FastboardView
 import io.agora.board.fast.extension.FastResource
@@ -162,6 +166,20 @@ open class HiOneActivity : AppCompatActivity() {
         fastRoom.join { room ->
             hiOneLayout.attachRoom(room)
         }
+        fastRoom.addListener(object: FastRoomListener{
+            override fun onRoomStateChanged(state: RoomState?) {
+                super.onRoomStateChanged(state)
+
+                val globalInfo = state?.globalState as? GlobalInfo
+                if(globalInfo != null){
+                    multiWhiteBoardHelper?.whiteBoardList = globalInfo?.roomList
+                    runOnUiThread {
+                        Toast.makeText(this@HiOneActivity, "globalInfo = $globalInfo", Toast.LENGTH_SHORT).show()
+                    }
+                }
+
+            }
+        })
 
         // hide all interactive controllers
         hideController()
@@ -223,6 +241,19 @@ open class HiOneActivity : AppCompatActivity() {
         setupControllerItem(R.id.insert_whiteboard_3, "whiteboard_3", 5, startShare = startShareWhiteBoard, stopShare = stopShare, switchPage = switchPage)
         setupControllerItem(R.id.insert_image, "Test.png", 0, startShare = startShareImage, stopShare = stopShare, switchPage = switchPage)
         setupControllerItem(R.id.insert_ppt, "Test.ppt", pptScenes.size, startShare = startSharePpt, stopShare = stopShare, switchPage = switchPage)
+
+
+        findViewById<TextView>(R.id.tvSetGlobalState).setOnClickListener {
+            val globalInfo = GlobalInfo(multiWhiteBoardHelper?.whiteBoardList ?: ArrayList())
+            fastRoom.room.globalState = globalInfo
+        }
+
+        findViewById<TextView>(R.id.tvGetGlobalState).setOnClickListener {
+            val globalState = fastRoom.room.globalState
+            val globalInfo = globalState as? GlobalInfo
+            Toast.makeText(this@HiOneActivity, "globalInfo = $globalInfo", Toast.LENGTH_SHORT).show()
+        }
+
     }
 
     private fun setupControllerItem(
@@ -273,5 +304,9 @@ open class HiOneActivity : AppCompatActivity() {
             switchPage.invoke(name, index)
         }
     }
+
+    class GlobalInfo(
+        val roomList: List<MultiWhiteBoardHelper.BoardListItem>
+    ) : GlobalState()
 
 }

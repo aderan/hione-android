@@ -70,6 +70,26 @@
           android:id="@+id/insert_ppt"
           layout="@layout/item_whiteboard_controller"/>
 
+      <TextView
+          android:id="@+id/tvSetGlobalState"
+          android:paddingHorizontal="12dp"
+          android:paddingVertical="6dp"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:textColor="@color/black"
+          android:layout_gravity="center"
+          android:text="SetGlobalState"/>
+
+      <TextView
+          android:id="@+id/tvGetGlobalState"
+          android:paddingHorizontal="12dp"
+          android:paddingVertical="6dp"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:textColor="@color/black"
+          android:layout_gravity="center"
+          android:text="GetGlobalState"/>
+
     </LinearLayout>
   </LinearLayout>
 
