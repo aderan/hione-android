@@ -16,6 +16,7 @@ import com.herewhite.sdk.domain.GlobalState
 import com.herewhite.sdk.domain.PptPage
 import com.herewhite.sdk.domain.RoomState
 import com.herewhite.sdk.domain.Scene
+import com.herewhite.sdk.domain.WhiteDisplayerState
 import com.herewhite.sdk.domain.WindowParams
 import io.agora.board.fast.FastRoom
 import io.agora.board.fast.FastRoomListener
@@ -166,6 +167,7 @@ open class HiOneActivity : AppCompatActivity() {
         fastRoom.join { room ->
             hiOneLayout.attachRoom(room)
         }
+        WhiteDisplayerState.setCustomGlobalStateClass(GlobalInfo::class.java)
         fastRoom.addListener(object: FastRoomListener{
             override fun onRoomStateChanged(state: RoomState?) {
                 super.onRoomStateChanged(state)
