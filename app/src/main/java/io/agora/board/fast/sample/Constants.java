@@ -1,9 +1,9 @@
 package io.agora.board.fast.sample;
 
 public class Constants {
-    public static final String SAMPLE_APP_ID = "283/VGiScM9Wiw2HJg";
-    public static final String SAMPLE_ROOM_UUID = "9bdd43206f5011ee90cba7667d54b7f2";
-    public static final String SAMPLE_ROOM_TOKEN = "NETLESSROOM_YWs9eTBJOWsxeC1IVVo4VGh0NyZub25jZT0xNjk3ODEwMjUwMTY0MDAmcm9sZT0wJnNpZz02YjNkMGVkNzYwYTQ4OTI1NDU2MDAxYjdlZDYxZTgwOTdjMGYyOTIxYzdlNWI0MThlNDU2OTNjNDUzZDVhYzdjJnV1aWQ9OWJkZDQzMjA2ZjUwMTFlZTkwY2JhNzY2N2Q1NGI3ZjI";
+    public static final String SAMPLE_APP_ID = "n9q1oBxDEeyuBMn1qc0iFw/fLgNSEvdwKjlil";
+    public static final String SAMPLE_ROOM_UUID = "684338a0ffed11eba057c9eab85067b6";
+    public static final String SAMPLE_ROOM_TOKEN = "NETLESSROOM_YWs9VWtNUk92M1JIN2I2Z284dCZub25jZT0xNjI5MjY4MDY5MDY3MDAmcm9sZT0wJnNpZz1jMTg1YjQ2ZGM0ZjNjZTVlMWQxMjk5Yzg4NWUzOWY0NmE4N2EzZGZlNTMxMjkwZDA0MmUyMTY1ZmQxYmE4NzFjJnV1aWQ9Njg0MzM4YTBmZmVkMTFlYmEwNTdjOWVhYjg1MDY3YjY";
 
     public static final String KEY_ROOM_UUID = "room_uuid";
     public static final String KEY_ROOM_TOKEN = "room_token";
