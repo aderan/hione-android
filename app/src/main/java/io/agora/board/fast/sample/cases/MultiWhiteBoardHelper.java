@@ -8,14 +8,14 @@ import com.herewhite.sdk.domain.Promise;
 import com.herewhite.sdk.domain.SDKError;
 import com.herewhite.sdk.domain.Scene;
 
-import io.agora.board.fast.FastRoom;
-import io.agora.board.fast.sample.R;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import io.agora.board.fast.FastRoom;
+import io.agora.board.fast.sample.R;
 
 /**
  * 白板多窗口辅助类
@@ -106,13 +106,17 @@ public class MultiWhiteBoardHelper {
      * 切换白板，白板路径或者页数不存在时会切换失败
      * @param path 白板路径
      * @param page 白板页数
+     * @param complete 执行结束回调
      */
-    public void switchWhiteBoard(String path, int page) {
+    public void switchWhiteBoard(String path, int page, Runnable complete) {
         fastRoom.getRoom().getEntireScenes(new Promise<Map<String, Scene[]>>() {
             @Override
             public void then(Map<String, Scene[]> stringMap) {
                 Scene[] scenes = stringMap.get("/");
                 switchWhiteBoardInner(scenes, path, page);
+                if (complete != null) {
+                    complete.run();
+                }
             }
 
             @Override
@@ -125,8 +129,9 @@ public class MultiWhiteBoardHelper {
     /**
      * 关闭白板
      * @param path 白板路径
+     * @param complete 执行结束回调
      */
-    public void destroyWhiteBoard(String path) {
+    public void destroyWhiteBoard(String path, Runnable complete) {
         fastRoom.getRoom().getEntireScenes(new Promise<Map<String, Scene[]>>() {
             @Override
             public void then(Map<String, Scene[]> stringMap) {
@@ -168,6 +173,9 @@ public class MultiWhiteBoardHelper {
 
                 for (Scene scene : removeScenes) {
                     fastRoom.getRoom().removeScenes("/" + scene.getName());
+                }
+                if(complete != null){
+                    complete.run();
                 }
             }
 
@@ -217,7 +225,7 @@ public class MultiWhiteBoardHelper {
 
     private BoardItemType getBoardItemType(String name) {
         String[] split = name.split("\\.");
-        if (split.length > 2) {
+        if (split.length > 1) {
             return BoardItemType.valueOf(split[1]);
         }
         return BoardItemType.whiteboard;

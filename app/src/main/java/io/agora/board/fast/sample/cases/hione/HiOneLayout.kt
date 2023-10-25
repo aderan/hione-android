@@ -18,7 +18,6 @@ import com.herewhite.sdk.domain.MemberState
 import com.herewhite.sdk.domain.Promise
 import com.herewhite.sdk.domain.RoomState
 import com.herewhite.sdk.domain.SDKError
-import com.herewhite.sdk.domain.WindowDocsEvent
 import io.agora.board.fast.FastRoom
 import io.agora.board.fast.FastRoomListener
 import io.agora.board.fast.model.FastAppliance
@@ -65,6 +64,7 @@ class HiOneLayout @JvmOverloads constructor(
     private var fastRoom: FastRoom? = null
 
     private var listener: HiOneLayoutListener? = null
+    private var swipeListener: HiOneSwipeListener? = null
 
     private var textCount = 0
 
@@ -158,12 +158,12 @@ class HiOneLayout @JvmOverloads constructor(
         gestureView.setGestureListener(object : HiOneGestureView.GestureListener {
             override fun onLeftSwipe() {
                 // Right to Left Swipe
-                fastRoom?.room?.dispatchDocsEvent(WindowDocsEvent.NextPage, null)
+                swipeListener?.onLeftSwipe()
             }
 
             override fun onRightSwipe() {
                 // Left to Right Swipe
-                fastRoom?.room?.dispatchDocsEvent(WindowDocsEvent.PrevPage, null)
+                swipeListener?.onRightSwipe()
             }
         })
 
@@ -293,9 +293,20 @@ class HiOneLayout @JvmOverloads constructor(
         fun onCloudStorageClick()
 
         fun onTextInsert(text: String)
+
+    }
+
+    interface HiOneSwipeListener {
+        fun onLeftSwipe()
+
+        fun onRightSwipe()
     }
 
     fun setHiOneLayoutListener(listener: HiOneLayoutListener) {
         this.listener = listener
+    }
+
+    fun setHiOneSwapListener(listener: HiOneSwipeListener) {
+        this.swipeListener = listener
     }
 }

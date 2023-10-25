@@ -3,6 +3,7 @@ package io.agora.board.fast.sample.cases.hione
 import android.graphics.Color
 import android.os.Bundle
 import android.provider.Settings
+import android.util.Log
 import android.view.View
 import android.widget.EditText
 import android.widget.FrameLayout
@@ -30,11 +31,13 @@ import io.agora.board.fast.model.FastRoomOptions
 import io.agora.board.fast.sample.Constants
 import io.agora.board.fast.sample.R
 import io.agora.board.fast.sample.cases.MultiWhiteBoardHelper
+import io.agora.board.fast.sample.cases.MultiWhiteBoardHelper.BoardItemStatus
 import io.agora.board.fast.sample.misc.KeyboardHeightProvider
 import io.agora.board.fast.sample.misc.Utils
 import io.agora.board.fast.sample.misc.hideSoftInput
 import io.agora.board.fast.sample.misc.showSoftInput
 import kotlin.math.abs
+import kotlin.random.Random
 
 open class HiOneActivity : AppCompatActivity() {
     private lateinit var fastboardView: FastboardView
@@ -54,6 +57,7 @@ open class HiOneActivity : AppCompatActivity() {
     private var keyboardHeightProvider: KeyboardHeightProvider? = null
 
     private var multiWhiteBoardHelper: MultiWhiteBoardHelper? = null
+    private val globalStateUid = Random(System.currentTimeMillis()).nextInt(1000) + 10000
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -171,15 +175,15 @@ open class HiOneActivity : AppCompatActivity() {
         fastRoom.addListener(object: FastRoomListener{
             override fun onRoomStateChanged(state: RoomState?) {
                 super.onRoomStateChanged(state)
-
+                // 监听global state变化
                 val globalInfo = state?.globalState as? GlobalInfo
-                if(globalInfo != null){
-                    multiWhiteBoardHelper?.whiteBoardList = globalInfo?.roomList
+                Log.d("HiOneActivity", "globalInfo = $globalInfo")
+                if(globalInfo != null && globalInfo.lastEditUid != globalStateUid){
+                    multiWhiteBoardHelper?.whiteBoardList = globalInfo.roomList
                     runOnUiThread {
-                        Toast.makeText(this@HiOneActivity, "globalInfo = $globalInfo", Toast.LENGTH_SHORT).show()
+                        initCloudLayout()
                     }
                 }
-
             }
         })
 
@@ -209,11 +213,16 @@ open class HiOneActivity : AppCompatActivity() {
 
         // 停止共享
         val stopShare: (name: String) -> Unit = { name ->
-            multiWhiteBoardHelper?.destroyWhiteBoard(name)
+            multiWhiteBoardHelper?.destroyWhiteBoard(name){
+                updateGlobalState()
+            }
+
         }
         // 切页
         val switchPage: (name: String, index: Int) -> Unit = { name, index ->
-            multiWhiteBoardHelper?.switchWhiteBoard(name, index)
+            multiWhiteBoardHelper?.switchWhiteBoard(name, index){
+                updateGlobalState()
+            }
         }
         // 共享空白白板
         val startShareWhiteBoard: (name: String, index: Int) -> Unit = { name, index ->
@@ -221,7 +230,9 @@ open class HiOneActivity : AppCompatActivity() {
                 name,
                 arrayOf(Scene("1"), Scene("2"), Scene("3"), Scene("4"), Scene("5"))
             )
-            multiWhiteBoardHelper?.switchWhiteBoard(name, index)
+            multiWhiteBoardHelper?.switchWhiteBoard(name, index){
+                updateGlobalState()
+            }
         }
         // 共享图片
         val startShareImage: (name: String, index: Int) -> Unit = { name, index ->
@@ -230,13 +241,18 @@ open class HiOneActivity : AppCompatActivity() {
             val width = 512.0
             val height = 512.0
             multiWhiteBoardHelper?.addWhiteBoard(name, arrayOf(Scene("1", PptPage(imageUrl, width, height))))
-            multiWhiteBoardHelper?.switchWhiteBoard(name, index)
+            multiWhiteBoardHelper?.switchWhiteBoard(name, index){
+                updateGlobalState()
+            }
+
         }
         // 共享PPT
         val pptScenes = FastConvertor.convertScenes(Utils.getDocPages("8da4cdc71a9845d385a5b58ddfa10b7e"))
         val startSharePpt: (name: String, index: Int) -> Unit = { name, index ->
             multiWhiteBoardHelper?.addWhiteBoard(name, pptScenes)
-            multiWhiteBoardHelper?.switchWhiteBoard(name, index)
+            multiWhiteBoardHelper?.switchWhiteBoard(name, index){
+                updateGlobalState()
+            }
         }
         setupControllerItem(R.id.insert_whiteboard_1, "whiteboard_1", 5, startShare = startShareWhiteBoard, stopShare = stopShare, switchPage = switchPage)
         setupControllerItem(R.id.insert_whiteboard_2, "whiteboard_2", 5, startShare = startShareWhiteBoard, stopShare = stopShare, switchPage = switchPage)
@@ -244,18 +260,53 @@ open class HiOneActivity : AppCompatActivity() {
         setupControllerItem(R.id.insert_image, "Test.png", 0, startShare = startShareImage, stopShare = stopShare, switchPage = switchPage)
         setupControllerItem(R.id.insert_ppt, "Test.ppt", pptScenes.size, startShare = startSharePpt, stopShare = stopShare, switchPage = switchPage)
 
-
+        // 设置GlobalState状态
         findViewById<TextView>(R.id.tvSetGlobalState).setOnClickListener {
-            val globalInfo = GlobalInfo(multiWhiteBoardHelper?.whiteBoardList ?: ArrayList())
-            fastRoom.room.globalState = globalInfo
+            updateGlobalState()
         }
 
+        // 获取GlobalState状态
         findViewById<TextView>(R.id.tvGetGlobalState).setOnClickListener {
             val globalState = fastRoom.room.globalState
             val globalInfo = globalState as? GlobalInfo
             Toast.makeText(this@HiOneActivity, "globalInfo = $globalInfo", Toast.LENGTH_SHORT).show()
         }
 
+        // 切页滑动监听
+        hiOneLayout.setHiOneSwapListener(object: HiOneLayout.HiOneSwipeListener{
+
+            override fun onLeftSwipe() {
+                // 翻到下一页
+                val helper = multiWhiteBoardHelper ?: return
+                val currWhiteBoard = helper.whiteBoardList.find { it.status == BoardItemStatus.active } ?: return
+                val targetPageIndex = currWhiteBoard.activityPage + 1
+                if(targetPageIndex < currWhiteBoard.totalPage){
+                    multiWhiteBoardHelper?.switchWhiteBoard(currWhiteBoard.name, targetPageIndex){
+                        updateGlobalState()
+                    }
+                }
+            }
+
+            override fun onRightSwipe() {
+                // 翻到上一页
+                val helper = multiWhiteBoardHelper ?: return
+                val currWhiteBoard = helper.whiteBoardList.find { it.status == BoardItemStatus.active } ?: return
+                val targetPageIndex = currWhiteBoard.activityPage - 1
+                if(targetPageIndex >= 0){
+                    multiWhiteBoardHelper?.switchWhiteBoard(currWhiteBoard.name, targetPageIndex){
+                        updateGlobalState()
+                    }
+                }
+            }
+        })
+    }
+
+    private fun updateGlobalState() {
+        val globalInfo = GlobalInfo(
+            globalStateUid,
+            multiWhiteBoardHelper?.whiteBoardList ?: ArrayList()
+        )
+        fastRoom.room.globalState = globalInfo
     }
 
     private fun setupControllerItem(
@@ -272,15 +323,23 @@ open class HiOneActivity : AppCompatActivity() {
         val ivPre = controllerView.findViewById<ImageView>(R.id.ivPrev)
         val ivNext = controllerView.findViewById<ImageView>(R.id.ivNext)
         val tvShare = controllerView.findViewById<TextView>(R.id.tvShare)
-        var index = 0
+
+        val whiteboard = multiWhiteBoardHelper?.whiteBoardList?.find { it.name == name }
+        var index = whiteboard?.activityPage ?: 0
 
         tvPage.isVisible = pageCount > 0
         ivPre.isVisible = pageCount > 0
         ivNext.isVisible = pageCount > 0
         tvName.text = name
         tvPage.text = "${index + 1}/$pageCount"
-        tvShare.setText(R.string.share_start)
-        tvShare.setTextColor(resources.getColor(R.color.blue))
+        if(whiteboard == null){
+            tvShare.setText(R.string.share_start)
+            tvShare.setTextColor(resources.getColor(R.color.blue))
+        }else{
+            tvShare.setText(R.string.share_stop)
+            tvShare.setTextColor(resources.getColor(R.color.red))
+        }
+
         tvShare.setOnClickListener {
             if (tvShare.text == getString(R.string.share_start)) {
                 startShare.invoke(name, index)
@@ -303,11 +362,13 @@ open class HiOneActivity : AppCompatActivity() {
             switchPage.invoke(name, index)
         }
         controllerView.setOnClickListener {
+            // 选中时切换
             switchPage.invoke(name, index)
         }
     }
 
     class GlobalInfo(
+        val lastEditUid: Int,
         val roomList: List<MultiWhiteBoardHelper.BoardListItem>
     ) : GlobalState()
 
