@@ -100,6 +100,40 @@ open class HiOneActivity : AppCompatActivity() {
 
         initCloudLayout()
 
+        // 切页滑动监听
+        hiOneLayout.setHiOneSwapListener(object: HiOneLayout.HiOneSwipeListener{
+
+            override fun onLeftSwipe() {
+                // 翻到下一页
+                val helper = multiWhiteBoardHelper ?: return
+                val currWhiteBoard = helper.whiteBoardList.find { it.status == BoardItemStatus.active } ?: return
+                val targetPageIndex = currWhiteBoard.activityPage + 1
+                if(targetPageIndex < currWhiteBoard.totalPage){
+                    multiWhiteBoardHelper?.switchWhiteBoard(currWhiteBoard.name, targetPageIndex){
+                        updateGlobalState()
+                        runOnUiThread {
+                            initCloudLayout()
+                        }
+                    }
+                }
+            }
+
+            override fun onRightSwipe() {
+                // 翻到上一页
+                val helper = multiWhiteBoardHelper ?: return
+                val currWhiteBoard = helper.whiteBoardList.find { it.status == BoardItemStatus.active } ?: return
+                val targetPageIndex = currWhiteBoard.activityPage - 1
+                if(targetPageIndex >= 0){
+                    multiWhiteBoardHelper?.switchWhiteBoard(currWhiteBoard.name, targetPageIndex){
+                        updateGlobalState()
+                        runOnUiThread {
+                            initCloudLayout()
+                        }
+                    }
+                }
+            }
+        })
+
         keyboardHeightProvider = KeyboardHeightProvider(this)
             .setHeightListener(object : KeyboardHeightProvider.HeightListener {
                 private var originBottomMargin: Int? = null
@@ -271,34 +305,6 @@ open class HiOneActivity : AppCompatActivity() {
             val globalInfo = globalState as? GlobalInfo
             Toast.makeText(this@HiOneActivity, "globalInfo = $globalInfo", Toast.LENGTH_SHORT).show()
         }
-
-        // 切页滑动监听
-        hiOneLayout.setHiOneSwapListener(object: HiOneLayout.HiOneSwipeListener{
-
-            override fun onLeftSwipe() {
-                // 翻到下一页
-                val helper = multiWhiteBoardHelper ?: return
-                val currWhiteBoard = helper.whiteBoardList.find { it.status == BoardItemStatus.active } ?: return
-                val targetPageIndex = currWhiteBoard.activityPage + 1
-                if(targetPageIndex < currWhiteBoard.totalPage){
-                    multiWhiteBoardHelper?.switchWhiteBoard(currWhiteBoard.name, targetPageIndex){
-                        updateGlobalState()
-                    }
-                }
-            }
-
-            override fun onRightSwipe() {
-                // 翻到上一页
-                val helper = multiWhiteBoardHelper ?: return
-                val currWhiteBoard = helper.whiteBoardList.find { it.status == BoardItemStatus.active } ?: return
-                val targetPageIndex = currWhiteBoard.activityPage - 1
-                if(targetPageIndex >= 0){
-                    multiWhiteBoardHelper?.switchWhiteBoard(currWhiteBoard.name, targetPageIndex){
-                        updateGlobalState()
-                    }
-                }
-            }
-        })
     }
 
     private fun updateGlobalState() {
