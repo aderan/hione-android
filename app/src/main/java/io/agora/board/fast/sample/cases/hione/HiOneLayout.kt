@@ -43,8 +43,8 @@ class HiOneLayout @JvmOverloads constructor(
         val defaultColor = HiOnePaintView.colors[0].toColorArray()
     }
 
-    // 手势检测控件
-    private lateinit var gestureView: HiOneGestureView
+    // 手势检测工具类
+    private var gestureHelper: HiOneGestureHelper? = null
 
     // 底部教具
     private lateinit var appliances: LinearLayout
@@ -64,6 +64,7 @@ class HiOneLayout @JvmOverloads constructor(
     private var fastRoom: FastRoom? = null
 
     private var listener: HiOneLayoutListener? = null
+
     private var swipeListener: HiOneSwipeListener? = null
 
     private var textCount = 0
@@ -117,7 +118,7 @@ class HiOneLayout @JvmOverloads constructor(
                 val centerX = cameraObj.optDouble("centerX", 0.0)
                 val centerY = cameraObj.optDouble("centerY", 0.0)
                 callback(centerX, centerY)
-            };
+            }
         }
     }
 
@@ -154,25 +155,11 @@ class HiOneLayout @JvmOverloads constructor(
             appliances.addView(view, generateLayoutParams())
         }
 
-        gestureView = root.findViewById(R.id.gesture_view)
-        gestureView.setGestureListener(object : HiOneGestureView.GestureListener {
-            override fun onLeftSwipe() {
-                // Right to Left Swipe
-                swipeListener?.onLeftSwipe()
-            }
-
-            override fun onRightSwipe() {
-                // Left to Right Swipe
-                swipeListener?.onRightSwipe()
-            }
-        })
-
         editor = root.findViewById(R.id.editor)
         editor.setOnClickListener {
             updateEditorMode(!editor.isSelected)
             hidePaintView()
         }
-        updateEditorMode(true)
 
         cloudService = root.findViewById(R.id.cloud_service)
         cloudService.setOnClickListener {
@@ -232,7 +219,8 @@ class HiOneLayout @JvmOverloads constructor(
     private fun updateEditorMode(selected: Boolean) {
         editor.isSelected = selected
         appliances.isVisible = selected
-        gestureView.isVisible = !selected
+        fastRoom?.room?.disableDeviceInputs(!selected)
+        gestureHelper?.setEnable(!selected)
     }
 
     private fun generateLayoutParams(): LinearLayout.LayoutParams {
@@ -265,6 +253,21 @@ class HiOneLayout @JvmOverloads constructor(
             strokeWidth = defaultStrokeWidth
         }
         this.fastRoom = fastRoom
+        this.gestureHelper = HiOneGestureHelper(getWhiteboardView()!!)
+        this.gestureHelper?.setGestureListener(object : HiOneGestureHelper.GestureListener {
+            override fun onLeftSwipe() {
+                swipeListener?.onLeftSwipe()
+            }
+
+            override fun onRightSwipe() {
+                swipeListener?.onRightSwipe()
+            }
+        })
+        updateEditorMode(false)
+    }
+
+    private fun getWhiteboardView(): WhiteboardView? {
+        return fastRoom?.fastboardView?.findViewById(R.id.fast_whiteboard_view)
     }
 
     fun updateText(text: String) {
