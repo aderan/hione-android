@@ -39,7 +39,9 @@ public class MultiWhiteBoardHelper {
      */
     public void setWhiteBoardList(List<BoardListItem> list){
         boardList.clear();
-        boardList.addAll(list);
+        if (list != null && !list.isEmpty()) {
+            boardList.addAll(list);
+        }
     }
 
     /**

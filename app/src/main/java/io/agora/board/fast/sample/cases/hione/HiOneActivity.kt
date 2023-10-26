@@ -375,7 +375,7 @@ open class HiOneActivity : AppCompatActivity() {
 
     class GlobalInfo(
         val lastEditUid: Int,
-        val roomList: List<MultiWhiteBoardHelper.BoardListItem>
+        val roomList: List<MultiWhiteBoardHelper.BoardListItem>? = null
     ) : GlobalState()
 
 }
