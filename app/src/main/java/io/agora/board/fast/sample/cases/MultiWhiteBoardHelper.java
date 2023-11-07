@@ -111,6 +111,7 @@ public class MultiWhiteBoardHelper {
      * @param complete 执行结束回调
      */
     public void switchWhiteBoard(String path, int page, Runnable complete) {
+        fastRoom.getRoom().getScenes();
         fastRoom.getRoom().getEntireScenes(new Promise<Map<String, Scene[]>>() {
             @Override
             public void then(Map<String, Scene[]> stringMap) {

@@ -5,6 +5,9 @@
   android:layout_height="match_parent"
   xmlns:tools="http://schemas.android.com/tools">
 
+
+
+
   <LinearLayout
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -20,8 +23,8 @@
       android:layout_width="match_parent"
       android:layout_height="wrap_content">
 
-      <io.agora.board.fast.FastboardView
-        android:id="@+id/fastboard_view"
+      <FrameLayout
+        android:id="@+id/fastboard_view_container"
         android:layout_width="match_parent"
         android:background="@color/black"
         android:layout_height="0dp"
@@ -131,4 +134,24 @@
         android:textSize="16sp" />
     </LinearLayout>
   </FrameLayout>
+
+  <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:orientation="vertical">
+
+    <Button
+        android:id="@+id/btnOpenWhiteBoard"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="openWhiteboard"/>
+
+    <Button
+        android:id="@+id/btnCloseWhiteBoard"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="closeWhiteboard"/>
+
+  </LinearLayout>
+
 </FrameLayout>

@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
 import android.view.View
+import android.widget.Button
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ImageView
@@ -13,12 +14,14 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.core.widget.addTextChangedListener
+import com.herewhite.sdk.domain.AnimationMode
 import com.herewhite.sdk.domain.GlobalState
 import com.herewhite.sdk.domain.PptPage
 import com.herewhite.sdk.domain.RoomState
 import com.herewhite.sdk.domain.Scene
 import com.herewhite.sdk.domain.WhiteDisplayerState
 import com.herewhite.sdk.domain.WindowParams
+import io.agora.board.fast.FastException
 import io.agora.board.fast.FastRoom
 import io.agora.board.fast.FastRoomListener
 import io.agora.board.fast.Fastboard
@@ -58,13 +61,13 @@ open class HiOneActivity : AppCompatActivity() {
 
     private var multiWhiteBoardHelper: MultiWhiteBoardHelper? = null
     private val globalStateUid = Random(System.currentTimeMillis()).nextInt(1000) + 10000
+    private var fastRoomListener :FastRoomListener? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_hi_one)
 
         initView()
-        setupFastboard()
     }
 
     private fun initView() {
@@ -111,6 +114,7 @@ open class HiOneActivity : AppCompatActivity() {
                 if(targetPageIndex < currWhiteBoard.totalPage){
                     multiWhiteBoardHelper?.switchWhiteBoard(currWhiteBoard.name, targetPageIndex){
                         updateGlobalState()
+                        fastRoom.room.scalePptToFit(AnimationMode.Immediately)
                         runOnUiThread {
                             initCloudLayout()
                         }
@@ -126,6 +130,7 @@ open class HiOneActivity : AppCompatActivity() {
                 if(targetPageIndex >= 0){
                     multiWhiteBoardHelper?.switchWhiteBoard(currWhiteBoard.name, targetPageIndex){
                         updateGlobalState()
+                        fastRoom.room.scalePptToFit(AnimationMode.Immediately)
                         runOnUiThread {
                             initCloudLayout()
                         }
@@ -151,6 +156,17 @@ open class HiOneActivity : AppCompatActivity() {
                     }
                 }
             })
+
+        findViewById<Button>(R.id.btnOpenWhiteBoard).setOnClickListener {
+            setupFastboard()
+        }
+
+        findViewById<Button>(R.id.btnCloseWhiteBoard).setOnClickListener {
+            val fastboardViewContainer = findViewById<FrameLayout>(R.id.fastboard_view_container)
+            fastboardViewContainer.removeAllViews()
+            fastRoom.removeListener(fastRoomListener)
+            fastRoom.destroy()
+        }
     }
 
     private fun enterTextInput() {
@@ -173,21 +189,23 @@ open class HiOneActivity : AppCompatActivity() {
     }
 
     private fun setupFastboard() {
-        fastboardView = findViewById(R.id.fastboard_view)
+        val fastboardViewContainer = findViewById<FrameLayout>(R.id.fastboard_view_container)
+        fastboardView = FastboardView(this)
+        fastboardViewContainer.removeAllViews()
+        fastboardViewContainer.addView(fastboardView)
         fastboard = fastboardView.fastboard
-
 
         val roomOptions = FastRoomOptions(
             Constants.SAMPLE_APP_ID,
             Constants.SAMPLE_ROOM_UUID,
             Constants.SAMPLE_ROOM_TOKEN,
-            getUserId(),
+            globalStateUid.toString(),
             FastRegion.CN_HZ
         )
         // window params
         val roomParams = roomOptions.roomParams.apply {
             windowParams = WindowParams()
-                .setContainerSizeRatio(9f / 16)
+                .setContainerSizeRatio(3f / 4)
                 .setChessboard(false)
                 .setFullscreen(true)
         }
@@ -202,24 +220,58 @@ open class HiOneActivity : AppCompatActivity() {
                 return Color.BLACK
             }
         })
+        Log.e("HiOneActivity", "FastRoom Join >> start")
         fastRoom.join { room ->
-            hiOneLayout.attachRoom(room)
+            Log.e("HiOneActivity", "FastRoom Join >> End")
+            // hiOneLayout.attachRoom(room)
         }
         WhiteDisplayerState.setCustomGlobalStateClass(GlobalInfo::class.java)
-        fastRoom.addListener(object: FastRoomListener{
+
+        fastRoomListener = object : FastRoomListener {
+
+            override fun onRoomReadyChanged(fastRoom: FastRoom?) {
+                super.onRoomReadyChanged(fastRoom)
+                Log.d("HiOneActivity", "onRoomReadyChanged >> isReady = ${fastRoom?.isReady}")
+
+                Log.d(
+                    "HiOneActivity",
+                    "onRoomReadyChanged >> state = ${fastRoom?.room?.globalState}"
+                )
+                if (fastRoom?.isReady == true) {
+                    hiOneLayout.attachRoom(fastRoom)
+
+                    // 新
+                    multiWhiteBoardHelper?.addWhiteBoard(
+                        "blackBoard" + java.util.Random().nextInt(1000),
+                        arrayOf(Scene("1"), Scene("2"), Scene("3"), Scene("4"), Scene("5"))
+                    )
+                    multiWhiteBoardHelper?.switchWhiteBoard("blackBoard111", 0) {
+                        //updateGlobalState()
+                    }
+                }
+            }
+
             override fun onRoomStateChanged(state: RoomState?) {
                 super.onRoomStateChanged(state)
+                Log.d("HiOneActivity", "onRoomStateChanged >> state = $state")
                 // 监听global state变化
                 val globalInfo = state?.globalState as? GlobalInfo
-                Log.d("HiOneActivity", "globalInfo = $globalInfo")
-                if(globalInfo != null && globalInfo.lastEditUid != globalStateUid){
+                Log.d("HiOneActivity", "GlobalInfo onRoomStateChanged >> globalInfo= $globalInfo")
+                if (globalInfo != null && globalInfo.lastEditUid != globalStateUid) {
                     multiWhiteBoardHelper?.whiteBoardList = globalInfo.roomList
                     runOnUiThread {
                         initCloudLayout()
                     }
                 }
             }
-        })
+
+            override fun onFastError(error: FastException?) {
+                super.onFastError(error)
+            }
+        }
+        fastRoom.addListener(fastRoomListener)
+
+
 
         // hide all interactive controllers
         hideController()
@@ -235,6 +287,7 @@ open class HiOneActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        fastRoom.room.globalState = null
         fastRoom.destroy()
     }
 
@@ -256,6 +309,7 @@ open class HiOneActivity : AppCompatActivity() {
         val switchPage: (name: String, index: Int) -> Unit = { name, index ->
             multiWhiteBoardHelper?.switchWhiteBoard(name, index){
                 updateGlobalState()
+                fastRoom.room.scalePptToFit(AnimationMode.Immediately)
             }
         }
         // 共享空白白板
@@ -278,7 +332,6 @@ open class HiOneActivity : AppCompatActivity() {
             multiWhiteBoardHelper?.switchWhiteBoard(name, index){
                 updateGlobalState()
             }
-
         }
         // 共享PPT
         val pptScenes = FastConvertor.convertScenes(Utils.getDocPages("8da4cdc71a9845d385a5b58ddfa10b7e"))
@@ -286,7 +339,9 @@ open class HiOneActivity : AppCompatActivity() {
             multiWhiteBoardHelper?.addWhiteBoard(name, pptScenes)
             multiWhiteBoardHelper?.switchWhiteBoard(name, index){
                 updateGlobalState()
+                fastRoom.room.scalePptToFit(AnimationMode.Immediately)
             }
+
         }
         setupControllerItem(R.id.insert_whiteboard_1, "whiteboard_1", 5, startShare = startShareWhiteBoard, stopShare = stopShare, switchPage = switchPage)
         setupControllerItem(R.id.insert_whiteboard_2, "whiteboard_2", 5, startShare = startShareWhiteBoard, stopShare = stopShare, switchPage = switchPage)
@@ -312,6 +367,7 @@ open class HiOneActivity : AppCompatActivity() {
             globalStateUid,
             multiWhiteBoardHelper?.whiteBoardList ?: ArrayList()
         )
+        Log.d("HiOneActivity", "GlobalInfo updateGlobalState >> globalInfo= $globalInfo")
         fastRoom.room.globalState = globalInfo
     }
 
