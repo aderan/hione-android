@@ -1,10 +1,16 @@
 package io.agora.board.fast.sample.cases.hione
 
+import android.graphics.Bitmap
 import android.graphics.Color
 import android.os.Bundle
+import android.os.SystemClock
 import android.provider.Settings
 import android.util.Log
 import android.view.View
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ImageView
@@ -13,12 +19,14 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.core.widget.addTextChangedListener
+import com.herewhite.sdk.WhiteboardView
 import com.herewhite.sdk.domain.GlobalState
 import com.herewhite.sdk.domain.PptPage
 import com.herewhite.sdk.domain.RoomState
 import com.herewhite.sdk.domain.Scene
 import com.herewhite.sdk.domain.WhiteDisplayerState
 import com.herewhite.sdk.domain.WindowParams
+import com.herewhite.sdk.internal.Logger
 import io.agora.board.fast.FastRoom
 import io.agora.board.fast.FastRoomListener
 import io.agora.board.fast.Fastboard
@@ -33,9 +41,11 @@ import io.agora.board.fast.sample.R
 import io.agora.board.fast.sample.cases.MultiWhiteBoardHelper
 import io.agora.board.fast.sample.cases.MultiWhiteBoardHelper.BoardItemStatus
 import io.agora.board.fast.sample.misc.KeyboardHeightProvider
+import io.agora.board.fast.sample.misc.TimeRecord
 import io.agora.board.fast.sample.misc.Utils
 import io.agora.board.fast.sample.misc.hideSoftInput
 import io.agora.board.fast.sample.misc.showSoftInput
+import java.sql.Time
 import kotlin.math.abs
 import kotlin.random.Random
 
@@ -58,6 +68,9 @@ open class HiOneActivity : AppCompatActivity() {
 
     private var multiWhiteBoardHelper: MultiWhiteBoardHelper? = null
     private val globalStateUid = Random(System.currentTimeMillis()).nextInt(1000) + 10000
+
+
+    private val timeRecord = TimeRecord()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -101,15 +114,16 @@ open class HiOneActivity : AppCompatActivity() {
         initCloudLayout()
 
         // 切页滑动监听
-        hiOneLayout.setHiOneSwapListener(object: HiOneLayout.HiOneSwipeListener{
+        hiOneLayout.setHiOneSwapListener(object : HiOneLayout.HiOneSwipeListener {
 
             override fun onLeftSwipe() {
                 // 翻到下一页
                 val helper = multiWhiteBoardHelper ?: return
-                val currWhiteBoard = helper.whiteBoardList.find { it.status == BoardItemStatus.active } ?: return
+                val currWhiteBoard =
+                    helper.whiteBoardList.find { it.status == BoardItemStatus.active } ?: return
                 val targetPageIndex = currWhiteBoard.activityPage + 1
-                if(targetPageIndex < currWhiteBoard.totalPage){
-                    multiWhiteBoardHelper?.switchWhiteBoard(currWhiteBoard.name, targetPageIndex){
+                if (targetPageIndex < currWhiteBoard.totalPage) {
+                    multiWhiteBoardHelper?.switchWhiteBoard(currWhiteBoard.name, targetPageIndex) {
                         updateGlobalState()
                         runOnUiThread {
                             initCloudLayout()
@@ -121,10 +135,11 @@ open class HiOneActivity : AppCompatActivity() {
             override fun onRightSwipe() {
                 // 翻到上一页
                 val helper = multiWhiteBoardHelper ?: return
-                val currWhiteBoard = helper.whiteBoardList.find { it.status == BoardItemStatus.active } ?: return
+                val currWhiteBoard =
+                    helper.whiteBoardList.find { it.status == BoardItemStatus.active } ?: return
                 val targetPageIndex = currWhiteBoard.activityPage - 1
-                if(targetPageIndex >= 0){
-                    multiWhiteBoardHelper?.switchWhiteBoard(currWhiteBoard.name, targetPageIndex){
+                if (targetPageIndex >= 0) {
+                    multiWhiteBoardHelper?.switchWhiteBoard(currWhiteBoard.name, targetPageIndex) {
                         updateGlobalState()
                         runOnUiThread {
                             initCloudLayout()
@@ -173,16 +188,17 @@ open class HiOneActivity : AppCompatActivity() {
     }
 
     private fun setupFastboard() {
+        timeRecord.start = System.currentTimeMillis()
+
         fastboardView = findViewById(R.id.fastboard_view)
         fastboard = fastboardView.fastboard
-
 
         val roomOptions = FastRoomOptions(
             Constants.SAMPLE_APP_ID,
             Constants.SAMPLE_ROOM_UUID,
             Constants.SAMPLE_ROOM_TOKEN,
             getUserId(),
-            FastRegion.CN_HZ
+            Constants.SAMPLE_FAST_REGION,
         )
         // window params
         val roomParams = roomOptions.roomParams.apply {
@@ -193,26 +209,63 @@ open class HiOneActivity : AppCompatActivity() {
         }
         roomOptions.roomParams = roomParams
 
+        val whiteboardView = fastboardView.findViewById<WhiteboardView>(io.agora.board.fast.R.id.fast_whiteboard_view)
+        whiteboardView.webViewClient = object : WebViewClient() {
+            override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+                super.onPageStarted(view, url, favicon)
+            }
+
+            override fun onPageFinished(view: WebView?, url: String?) {
+                timeRecord.loadPage = System.currentTimeMillis() - timeRecord.start
+                // Logger.info("time cost onPageFinished cost:" + (System.currentTimeMillis() - timeRecord.start));
+                super.onPageFinished(view, url)
+            }
+
+            override fun onLoadResource(view: WebView?, url: String?) {
+                // Logger.info("chow join onLoadResource url=$url");
+                super.onLoadResource(view, url)
+            }
+
+            override fun shouldOverrideUrlLoading(
+                view: WebView?,
+                request: WebResourceRequest?
+            ): Boolean {
+                // Logger.info("chow join shouldOverrideUrlLoading url=${request?.url}")
+                return super.shouldOverrideUrlLoading(view, request)
+            }
+
+            override fun shouldInterceptRequest(
+                view: WebView?,
+                request: WebResourceRequest?
+            ): WebResourceResponse? {
+                // Logger.info("chow join shouldInterceptRequest url=${request?.url}")
+                return super.shouldInterceptRequest(view, request)
+            }
+        }
+
         fastRoom = fastboard.createFastRoom(roomOptions)
         multiWhiteBoardHelper = MultiWhiteBoardHelper(fastRoom)
 
-        //set whiteboard and FastboardView background
+        // set whiteboard and FastboardView background
         fastRoom.setResource(object : FastResource() {
             override fun getBackgroundColor(darkMode: Boolean): Int {
                 return Color.BLACK
             }
         })
         fastRoom.join { room ->
+            timeRecord.joinRoom = System.currentTimeMillis() - timeRecord.start
+
+            Logger.info("time cost loadPage ${timeRecord.loadPage}, joinRoom cost ${timeRecord.joinRoom}")
             hiOneLayout.attachRoom(room)
         }
         WhiteDisplayerState.setCustomGlobalStateClass(GlobalInfo::class.java)
-        fastRoom.addListener(object: FastRoomListener{
+        fastRoom.addListener(object : FastRoomListener {
             override fun onRoomStateChanged(state: RoomState?) {
                 super.onRoomStateChanged(state)
                 // 监听global state变化
                 val globalInfo = state?.globalState as? GlobalInfo
                 Log.d("HiOneActivity", "globalInfo = $globalInfo")
-                if(globalInfo != null && globalInfo.lastEditUid != globalStateUid){
+                if (globalInfo != null && globalInfo.lastEditUid != globalStateUid) {
                     multiWhiteBoardHelper?.whiteBoardList = globalInfo.roomList
                     runOnUiThread {
                         initCloudLayout()
@@ -247,14 +300,14 @@ open class HiOneActivity : AppCompatActivity() {
 
         // 停止共享
         val stopShare: (name: String) -> Unit = { name ->
-            multiWhiteBoardHelper?.destroyWhiteBoard(name){
+            multiWhiteBoardHelper?.destroyWhiteBoard(name) {
                 updateGlobalState()
             }
 
         }
         // 切页
         val switchPage: (name: String, index: Int) -> Unit = { name, index ->
-            multiWhiteBoardHelper?.switchWhiteBoard(name, index){
+            multiWhiteBoardHelper?.switchWhiteBoard(name, index) {
                 updateGlobalState()
             }
         }
@@ -264,7 +317,7 @@ open class HiOneActivity : AppCompatActivity() {
                 name,
                 arrayOf(Scene("1"), Scene("2"), Scene("3"), Scene("4"), Scene("5"))
             )
-            multiWhiteBoardHelper?.switchWhiteBoard(name, index){
+            multiWhiteBoardHelper?.switchWhiteBoard(name, index) {
                 updateGlobalState()
             }
         }
@@ -274,25 +327,64 @@ open class HiOneActivity : AppCompatActivity() {
                 "https://flat-storage.oss-accelerate.aliyuncs.com/cloud-storage/2022-02/15/ebe8320a-a90e-4e03-ad3a-a5dc06ae6eda/ebe8320a-a90e-4e03-ad3a-a5dc06ae6eda.png"
             val width = 512.0
             val height = 512.0
-            multiWhiteBoardHelper?.addWhiteBoard(name, arrayOf(Scene("1", PptPage(imageUrl, width, height))))
-            multiWhiteBoardHelper?.switchWhiteBoard(name, index){
+            multiWhiteBoardHelper?.addWhiteBoard(
+                name,
+                arrayOf(Scene("1", PptPage(imageUrl, width, height)))
+            )
+            multiWhiteBoardHelper?.switchWhiteBoard(name, index) {
                 updateGlobalState()
             }
 
         }
         // 共享PPT
-        val pptScenes = FastConvertor.convertScenes(Utils.getDocPages("8da4cdc71a9845d385a5b58ddfa10b7e"))
+        val pptScenes =
+            FastConvertor.convertScenes(Utils.getDocPages("8da4cdc71a9845d385a5b58ddfa10b7e"))
         val startSharePpt: (name: String, index: Int) -> Unit = { name, index ->
             multiWhiteBoardHelper?.addWhiteBoard(name, pptScenes)
-            multiWhiteBoardHelper?.switchWhiteBoard(name, index){
+            multiWhiteBoardHelper?.switchWhiteBoard(name, index) {
                 updateGlobalState()
             }
         }
-        setupControllerItem(R.id.insert_whiteboard_1, "whiteboard_1", 5, startShare = startShareWhiteBoard, stopShare = stopShare, switchPage = switchPage)
-        setupControllerItem(R.id.insert_whiteboard_2, "whiteboard_2", 5, startShare = startShareWhiteBoard, stopShare = stopShare, switchPage = switchPage)
-        setupControllerItem(R.id.insert_whiteboard_3, "whiteboard_3", 5, startShare = startShareWhiteBoard, stopShare = stopShare, switchPage = switchPage)
-        setupControllerItem(R.id.insert_image, "Test.png", 0, startShare = startShareImage, stopShare = stopShare, switchPage = switchPage)
-        setupControllerItem(R.id.insert_ppt, "Test.ppt", pptScenes.size, startShare = startSharePpt, stopShare = stopShare, switchPage = switchPage)
+        setupControllerItem(
+            R.id.insert_whiteboard_1,
+            "whiteboard_1",
+            5,
+            startShare = startShareWhiteBoard,
+            stopShare = stopShare,
+            switchPage = switchPage
+        )
+        setupControllerItem(
+            R.id.insert_whiteboard_2,
+            "whiteboard_2",
+            5,
+            startShare = startShareWhiteBoard,
+            stopShare = stopShare,
+            switchPage = switchPage
+        )
+        setupControllerItem(
+            R.id.insert_whiteboard_3,
+            "whiteboard_3",
+            5,
+            startShare = startShareWhiteBoard,
+            stopShare = stopShare,
+            switchPage = switchPage
+        )
+        setupControllerItem(
+            R.id.insert_image,
+            "Test.png",
+            0,
+            startShare = startShareImage,
+            stopShare = stopShare,
+            switchPage = switchPage
+        )
+        setupControllerItem(
+            R.id.insert_ppt,
+            "Test.ppt",
+            pptScenes.size,
+            startShare = startSharePpt,
+            stopShare = stopShare,
+            switchPage = switchPage
+        )
 
         // 设置GlobalState状态
         findViewById<TextView>(R.id.tvSetGlobalState).setOnClickListener {
@@ -303,7 +395,8 @@ open class HiOneActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.tvGetGlobalState).setOnClickListener {
             val globalState = fastRoom.room.globalState
             val globalInfo = globalState as? GlobalInfo
-            Toast.makeText(this@HiOneActivity, "globalInfo = $globalInfo", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this@HiOneActivity, "globalInfo = $globalInfo", Toast.LENGTH_SHORT)
+                .show()
         }
     }
 
@@ -338,10 +431,10 @@ open class HiOneActivity : AppCompatActivity() {
         ivNext.isVisible = pageCount > 0
         tvName.text = name
         tvPage.text = "${index + 1}/$pageCount"
-        if(whiteboard == null){
+        if (whiteboard == null) {
             tvShare.setText(R.string.share_start)
             tvShare.setTextColor(resources.getColor(R.color.blue))
-        }else{
+        } else {
             tvShare.setText(R.string.share_stop)
             tvShare.setTextColor(resources.getColor(R.color.red))
         }
